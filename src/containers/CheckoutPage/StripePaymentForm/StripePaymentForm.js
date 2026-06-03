@@ -505,6 +505,7 @@ class StripePaymentForm extends Component {
       walletCurrency,
       walletCountry,
       walletLabel,
+      walletOnBehalfOf,
       onWalletPaymentMethod,
     } = formRenderProps;
 
@@ -612,13 +613,17 @@ class StripePaymentForm extends Component {
           intl={intl}
         />
 
-        {billingDetailsNeeded && !loadingData && onWalletPaymentMethod ? (
+        {billingDetailsNeeded &&
+        !loadingData &&
+        onWalletPaymentMethod &&
+        walletOnBehalfOf ? (
           <PaymentRequestButton
             stripe={this.stripe}
             amount={walletAmount}
             currency={walletCurrency}
             country={walletCountry}
             label={walletLabel}
+            onBehalfOf={walletOnBehalfOf}
             onPaymentMethod={onWalletPaymentMethod}
           />
         ) : null}

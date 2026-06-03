@@ -35,6 +35,7 @@ import { storeData, clearData, handlePageData } from './CheckoutPageSessionHelpe
 
 // Import modules from this directory
 import {
+  fetchProviderStripeAccountId,
   initiateOrder,
   setInitialValues,
   speculateTransaction,
@@ -81,6 +82,7 @@ const EnhancedCheckoutPage = props => {
       transaction,
       fetchSpeculatedTransaction,
       fetchStripeCustomer,
+      onFetchProviderStripeAccountId,
     } = props;
     const initialData = { orderData, listing, transaction };
     const data = handlePageData(initialData, STORAGE_KEY, history);
@@ -96,6 +98,7 @@ const EnhancedCheckoutPage = props => {
           pageData: data || {},
           fetchSpeculatedTransaction,
           fetchStripeCustomer,
+          fetchProviderStripeAccountId: onFetchProviderStripeAccountId,
           config,
         });
       }
@@ -229,6 +232,7 @@ const mapStateToProps = state => {
     initiateInquiryError,
     initiateOrderError,
     confirmPaymentError,
+    providerStripeAccountId,
   } = state.CheckoutPage;
   const { currentUser } = state.user;
   const { confirmCardPaymentError, paymentIntent, retrievePaymentIntentError } = state.stripe;
@@ -249,6 +253,7 @@ const mapStateToProps = state => {
     confirmPaymentError,
     paymentIntent,
     retrievePaymentIntentError,
+    providerStripeAccountId,
   };
 };
 
@@ -257,6 +262,8 @@ const mapDispatchToProps = dispatch => ({
   fetchSpeculatedTransaction: (params, processAlias, txId, transitionName, isPrivileged) =>
     dispatch(speculateTransaction(params, processAlias, txId, transitionName, isPrivileged)),
   fetchStripeCustomer: () => dispatch(stripeCustomer()),
+  onFetchProviderStripeAccountId: listingId =>
+    dispatch(fetchProviderStripeAccountId(listingId)),
   onInquiryWithoutPayment: (params, processAlias, transitionName) =>
     dispatch(initiateInquiryWithoutPayment(params, processAlias, transitionName)),
   onInitiateOrder: (params, processAlias, transactionId, transitionName, isPrivileged) =>

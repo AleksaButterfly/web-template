@@ -3,9 +3,12 @@ const https = require('https');
 const Decimal = require('decimal.js');
 const log = require('../log');
 const sharetribeSdk = require('sharetribe-flex-sdk');
+const sharetribeIntegrationSdk = require('sharetribe-flex-integration-sdk');
 
 const CLIENT_ID = process.env.REACT_APP_SHARETRIBE_SDK_CLIENT_ID;
 const CLIENT_SECRET = process.env.SHARETRIBE_SDK_CLIENT_SECRET;
+const INTEGRATION_CLIENT_ID = process.env.SHARETRIBE_INTEGRATION_CLIENT_ID;
+const INTEGRATION_CLIENT_SECRET = process.env.SHARETRIBE_INTEGRATION_CLIENT_SECRET;
 const USING_SSL = process.env.REACT_APP_SHARETRIBE_USING_SSL === 'true';
 const TRANSIT_VERBOSE = process.env.REACT_APP_SHARETRIBE_SDK_TRANSIT_VERBOSE === 'true';
 const MAX_SOCKETS = process.env.MAX_SOCKETS;
@@ -174,6 +177,24 @@ exports.getTrustedSdk = req => {
       typeHandlers,
       ...baseUrlMaybe,
     });
+  });
+};
+
+// Integration SDK — server-only, used for the privileged reads the
+// Marketplace API doesn't expose to public clients (e.g. another user's
+// `stripeAccount.attributes.stripeAccountId`, needed to attribute the
+// Apple Pay / Google Pay wallet sheet to the seller via `onBehalfOf`).
+// Returns null if credentials are not configured so callers can degrade
+// gracefully (e.g. the wallet button just doesn't render).
+exports.getIntegrationSdk = () => {
+  if (!INTEGRATION_CLIENT_ID || !INTEGRATION_CLIENT_SECRET) {
+    return null;
+  }
+  return sharetribeIntegrationSdk.createInstance({
+    clientId: INTEGRATION_CLIENT_ID,
+    clientSecret: INTEGRATION_CLIENT_SECRET,
+    typeHandlers,
+    ...baseUrlMaybe,
   });
 };
 

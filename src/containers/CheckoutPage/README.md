@@ -52,8 +52,15 @@ _default-purchase_ processes, the page uses a sub-component called **CheckoutPag
 
 First, the checkout page calls `loadInitialDataForStripePayments` for these Stripe-related
 processes, which calls `fetchSpeculatedTransaction` if the transaction has not made any transition
-that creates _line items_ for pricing and Stripe PaymentIntent. The "speculative transaction" has 2
-purposes:
+that creates _line items_ for pricing and Stripe PaymentIntent. It also dispatches
+`fetchProviderStripeAccountId` to look up the seller's Stripe Connect account id via the server-side
+Integration SDK bridge (`POST /api/stripe-account-for-listing`); the id is needed to initialise the
+Payment Request Button with the matching `onBehalfOf`, so the Apple Pay / Google Pay wallet sheet
+attributes the merchant to the seller rather than the platform. If the Integration SDK is not
+configured (`SHARETRIBE_INTEGRATION_CLIENT_ID` / `_SECRET` left blank), the wallet button silently
+hides and the card form remains the sole payment option.
+
+The "speculative transaction" has 2 purposes:
 
 - it checks if Marketplace API can execute the transition without errors
 - it gets **_line items_** from the client app's server - so that the order breakdown can be shown

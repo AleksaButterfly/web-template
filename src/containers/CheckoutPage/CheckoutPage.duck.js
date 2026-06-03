@@ -1,7 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 import { pick } from '../../util/common';
-import { initiatePrivileged, transitionPrivileged } from '../../util/api';
+import {
+  initiatePrivileged,
+  stripeAccountForListing,
+  transitionPrivileged,
+} from '../../util/api';
 import { denormalisedResponseEntities } from '../../util/data';
 import { storableError } from '../../util/errors';
 import * as log from '../../util/log';
@@ -397,6 +401,34 @@ export const stripeCustomer = () => dispatch => {
   return dispatch(stripeCustomerThunk({})).unwrap();
 };
 
+///////////////////////////////////////////////
+// Fetch provider Stripe Connect account id  //
+///////////////////////////////////////////////
+//
+// The seller's Stripe Connect account id is required client-side to
+// initialise the Payment Request Button with the correct `onBehalfOf`
+// value (so the Apple Pay / Google Pay wallet sheet shows the seller
+// as merchant rather than the platform). It isn't exposed via the
+// public Marketplace API, so we round-trip through the Integration
+// SDK on the server. Rejected results degrade gracefully — the wallet
+// button just won't render. The card form is unaffected.
+const providerStripeAccountIdPayloadCreator = ({ listingId }, { rejectWithValue }) => {
+  if (!listingId) {
+    return rejectWithValue({ status: 400, code: 'missing-listing-id' });
+  }
+  return stripeAccountForListing({ listingId })
+    .then(response => response?.data?.providerStripeAccountId || null)
+    .catch(e => rejectWithValue(storableError(e)));
+};
+
+export const fetchProviderStripeAccountIdThunk = createAsyncThunk(
+  'CheckoutPage/fetchProviderStripeAccountId',
+  providerStripeAccountIdPayloadCreator
+);
+
+export const fetchProviderStripeAccountId = listingId => dispatch =>
+  dispatch(fetchProviderStripeAccountIdThunk({ listingId })).unwrap();
+
 // ================ Slice ================ //
 
 const initialState = {
@@ -413,6 +445,7 @@ const initialState = {
   stripeCustomerFetchError: null,
   initiateInquiryInProgress: false,
   initiateInquiryError: null,
+  providerStripeAccountId: null,
 };
 
 const checkoutPageSlice = createSlice({
@@ -491,6 +524,18 @@ const checkoutPageSlice = createSlice({
       .addCase(initiateInquiryThunk.rejected, (state, action) => {
         state.initiateInquiryInProgress = false;
         state.initiateInquiryError = action.payload;
+      })
+      // Provider Stripe Connect account id (for wallet onBehalfOf)
+      .addCase(fetchProviderStripeAccountIdThunk.pending, state => {
+        state.providerStripeAccountId = null;
+      })
+      .addCase(fetchProviderStripeAccountIdThunk.fulfilled, (state, action) => {
+        state.providerStripeAccountId = action.payload || null;
+      })
+      .addCase(fetchProviderStripeAccountIdThunk.rejected, state => {
+        // Swallow — wallet button silently doesn't render when the id
+        // is unavailable; the card form remains usable.
+        state.providerStripeAccountId = null;
       });
   },
 });

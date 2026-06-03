@@ -223,12 +223,23 @@ export const loadInitialDataForStripePayments = ({
   pageData,
   fetchSpeculatedTransaction,
   fetchStripeCustomer,
+  fetchProviderStripeAccountId,
   config,
 }) => {
   // Fetch currentUser with stripeCustomer entity
   // Note: since there's need for data loading in "componentWillMount" function,
   //       this is added here instead of loadData static function.
   fetchStripeCustomer();
+
+  // Fetch the seller's Stripe Connect account id so the Payment
+  // Request Button can initialise with the matching `onBehalfOf`.
+  // Fire-and-forget — the wallet button silently hides if this fails.
+  const listingId = pageData?.listing?.id?.uuid;
+  if (listingId && typeof fetchProviderStripeAccountId === 'function') {
+    fetchProviderStripeAccountId(listingId).catch(() => {
+      // Already handled in the reducer's rejected case.
+    });
+  }
 
   // Fetch speculated transaction for showing price in order breakdown
   // NOTE: if unit type is line-item/item, quantity needs to be added.
@@ -253,9 +264,16 @@ export const loadInitialDataForStripePayments = ({
  * `stripePaymentMethodId` (the wallet PaymentMethod's id) and flag
  * `isPaymentFlowUseSavedCard: true`, so the existing
  * `stripe.confirmCardPayment(clientSecret, { payment_method: id })`
- * call works unchanged. No new server endpoints, no `on_behalf_of`
- * juggling — Stripe Connect destination-charge alignment happens
- * inside `confirmCardPayment` itself.
+ * call works unchanged. The charge routes through the PaymentIntent's
+ * `transfer_data[destination]` to the seller without any extra plumbing
+ * here.
+ *
+ * Note: the matching `on_behalf_of` plumbing for the wallet sheet's
+ * merchant attribution is handled upstream — see
+ * `fetchProviderStripeAccountId` in `CheckoutPage.duck.js` and the
+ * `onBehalfOf` prop on `PaymentRequestButton`. Without it the charge
+ * still succeeds, but Apple Pay / Google Pay credit the platform as
+ * merchant rather than the seller.
  */
 const handleWalletSubmit = (
   { paymentMethod, complete, payerEmail },
@@ -555,6 +573,7 @@ export const CheckoutPageWithPayment = props => {
     transactionFieldConfigs = [],
     showTransactionFields,
     config,
+    providerStripeAccountId,
   } = props;
 
   // Since the listing data is already given from the ListingPage
@@ -774,6 +793,7 @@ export const CheckoutPageWithPayment = props => {
                 }
                 walletCountry={config.stripe?.merchantCountry || 'US'}
                 walletLabel={listingTitle || config.marketplaceName}
+                walletOnBehalfOf={providerStripeAccountId}
                 onWalletPaymentMethod={walletEvent =>
                   handleWalletSubmit(walletEvent, process, props, stripe, submitting, setSubmitting)
                 }

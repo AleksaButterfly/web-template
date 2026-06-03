@@ -24,13 +24,27 @@ import css from './PaymentRequestButton.module.css';
  * @param {string} props.currency — ISO currency code, lowercase (e.g. 'usd', 'eur', 'nok')
  * @param {string} props.country — Stripe-account country, two-letter (e.g. 'US', 'FI', 'NO')
  * @param {string} props.label — human-readable line item label shown in the wallet sheet
+ * @param {string} props.onBehalfOf — connected Stripe account id of the seller.
+ *        Sharetribe creates the PaymentIntent with `on_behalf_of` pointing at
+ *        the seller, and Stripe requires this matching id on the
+ *        client-side `paymentRequest` so the wallet sheet attributes the
+ *        merchant to the seller rather than the platform. Caller must
+ *        only render this component once the id is known.
  * @param {Function} props.onPaymentMethod — fires when the buyer authorises in the
  *        wallet. Receives `{ paymentMethod, complete }`. Call
  *        `complete('success')` or `complete('fail')` once Sharetribe's
  *        confirm-payment transition has resolved.
  */
 const PaymentRequestButton = props => {
-  const { stripe, amount, currency, country, label, onPaymentMethod } = props;
+  const {
+    stripe,
+    amount,
+    currency,
+    country,
+    label,
+    onBehalfOf,
+    onPaymentMethod,
+  } = props;
   const mountRef = useRef(null);
   const paymentRequestRef = useRef(null);
   const onPaymentMethodRef = useRef(onPaymentMethod);
@@ -44,7 +58,14 @@ const PaymentRequestButton = props => {
   }, [onPaymentMethod]);
 
   useEffect(() => {
-    if (!stripe || !amount || !currency || !country || paymentRequestRef.current) {
+    if (
+      !stripe ||
+      !amount ||
+      !currency ||
+      !country ||
+      !onBehalfOf ||
+      paymentRequestRef.current
+    ) {
       return undefined;
     }
     // Some Stripe.js test mocks omit the paymentRequest API; bail out
@@ -59,6 +80,10 @@ const PaymentRequestButton = props => {
       total: { label, amount },
       requestPayerName: true,
       requestPayerEmail: true,
+      // Must match the `on_behalf_of` account on the Sharetribe-created
+      // PaymentIntent — otherwise the wallet sheet shows the platform
+      // as merchant of record instead of the seller.
+      onBehalfOf,
     });
 
     paymentRequest.canMakePayment().then(result => {
@@ -91,7 +116,7 @@ const PaymentRequestButton = props => {
 
     paymentRequestRef.current = paymentRequest;
     return undefined;
-  }, [stripe, amount, currency, country, label]);
+  }, [stripe, amount, currency, country, label, onBehalfOf]);
 
   if (!canRender) {
     return null;
