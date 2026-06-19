@@ -223,12 +223,23 @@ export const loadInitialDataForStripePayments = ({
   pageData,
   fetchSpeculatedTransaction,
   fetchStripeCustomer,
+  fetchProviderStripeAccountId,
   config,
 }) => {
   // Fetch currentUser with stripeCustomer entity
   // Note: since there's need for data loading in "componentWillMount" function,
   //       this is added here instead of loadData static function.
   fetchStripeCustomer();
+
+  // Fetch the seller's Stripe Connect account id so the Payment
+  // Request Button can initialise with the matching `onBehalfOf`.
+  // Fire-and-forget — the wallet button silently hides if this fails.
+  const listingId = pageData?.listing?.id?.uuid;
+  if (listingId && typeof fetchProviderStripeAccountId === 'function') {
+    fetchProviderStripeAccountId(listingId).catch(() => {
+      // Already handled in the reducer's rejected case.
+    });
+  }
 
   // Fetch speculated transaction for showing price in order breakdown
   // NOTE: if unit type is line-item/item, quantity needs to be added.
@@ -238,6 +249,130 @@ export const loadInitialDataForStripePayments = ({
   const orderParams = getOrderParams(pageData, shippingDetails, optionalPaymentParams, config);
 
   fetchSpeculatedTransactionIfNeeded(orderParams, pageData, fetchSpeculatedTransaction);
+};
+
+/**
+ * Wallet (Apple Pay / Google Pay / Link) submit path.
+ *
+ * The buyer authorised payment inside the Stripe wallet sheet; the
+ * `paymentmethod` event handed us a `paymentMethod` object plus a
+ * `complete` callback we MUST call to dismiss the sheet (success or
+ * fail).
+ *
+ * Behind the scenes we route through the same `processCheckoutWithPayment`
+ * flow Sharetribe's card path uses — we just feed it
+ * `stripePaymentMethodId` (the wallet PaymentMethod's id) and flag
+ * `isPaymentFlowUseSavedCard: true`, so the existing
+ * `stripe.confirmCardPayment(clientSecret, { payment_method: id })`
+ * call works unchanged. The charge routes through the PaymentIntent's
+ * `transfer_data[destination]` to the seller without any extra plumbing
+ * here.
+ *
+ * Note: the matching `on_behalf_of` plumbing for the wallet sheet's
+ * merchant attribution is handled upstream — see
+ * `fetchProviderStripeAccountId` in `CheckoutPage.duck.js` and the
+ * `onBehalfOf` prop on `PaymentRequestButton`. Without it the charge
+ * still succeeds, but Apple Pay / Google Pay credit the platform as
+ * merchant rather than the seller.
+ */
+const handleWalletSubmit = (
+  { paymentMethod, complete, payerEmail },
+  process,
+  props,
+  stripe,
+  submitting,
+  setSubmitting
+) => {
+  if (submitting) {
+    complete('fail');
+    return;
+  }
+  setSubmitting(true);
+
+  const {
+    history,
+    config,
+    routeConfiguration,
+    speculatedTransaction,
+    currentUser,
+    paymentIntent,
+    dispatch,
+    onInitiateOrder,
+    onConfirmCardPayment,
+    onConfirmPayment,
+    onSavePaymentMethod,
+    onSubmitCallback,
+    pageData,
+    setPageData,
+    sessionStorageKey,
+    transactionFieldConfigs = [],
+  } = props;
+
+  const transactionFieldsProtectedData = {
+    ...pickTransactionFieldsData({}, 'protected', true, transactionFieldConfigs),
+  };
+
+  const hasPaymentIntentUserActionsDone =
+    paymentIntent && STRIPE_PI_USER_ACTIONS_DONE_STATUSES.includes(paymentIntent.status);
+
+  const requestPaymentParams = {
+    pageData,
+    speculatedTransaction,
+    stripe,
+    billingDetails: { email: payerEmail || currentUser?.attributes?.email || null },
+    paymentIntent,
+    hasPaymentIntentUserActionsDone,
+    // Hand the wallet's PaymentMethod id to the existing card-path
+    // confirmation logic via the same slot saved cards use.
+    stripePaymentMethodId: paymentMethod.id,
+    process,
+    onInitiateOrder,
+    onConfirmCardPayment,
+    onConfirmPayment,
+    onSavePaymentMethod,
+    sessionStorageKey,
+    stripeCustomer: currentUser?.stripeCustomer,
+    isPaymentFlowUseSavedCard: true,
+    isPaymentFlowPayAndSaveCard: false,
+    setPageData,
+  };
+
+  const shippingDetails = getShippingDetailsMaybe({});
+  const orderParams = getOrderParams(
+    pageData,
+    shippingDetails,
+    { paymentMethod: paymentMethod.id },
+    config,
+    transactionFieldsProtectedData,
+    null
+  );
+
+  processCheckoutWithPayment(orderParams, requestPaymentParams)
+    .then(response => {
+      // Dismiss the wallet sheet first so the buyer sees the page
+      // transition instantly — Stripe needs `complete` called
+      // synchronously after the payment finishes.
+      complete('success');
+
+      const { orderId } = response;
+      setSubmitting(false);
+
+      const orderDetailsPath = pathByRouteName('OrderDetailsPage', routeConfiguration, {
+        id: orderId.uuid,
+      });
+      setOrderPageInitialValues(
+        { savePaymentMethodFailed: false },
+        routeConfiguration,
+        dispatch
+      );
+      onSubmitCallback();
+      history.push(orderDetailsPath);
+    })
+    .catch(err => {
+      console.error(err);
+      complete('fail');
+      setSubmitting(false);
+    });
 };
 
 const handleSubmit = (values, process, props, stripe, submitting, setSubmitting) => {
@@ -438,6 +573,7 @@ export const CheckoutPageWithPayment = props => {
     transactionFieldConfigs = [],
     showTransactionFields,
     config,
+    providerStripeAccountId,
   } = props;
 
   // Since the listing data is already given from the ListingPage
@@ -651,6 +787,16 @@ export const CheckoutPageWithPayment = props => {
                 isFuzzyLocation={config.maps.fuzzy.enabled}
                 transactionFieldConfigs={transactionFieldConfigs}
                 showTransactionFields={showTransactionFields}
+                walletAmount={tx?.attributes?.payinTotal?.amount}
+                walletCurrency={
+                  tx?.attributes?.payinTotal?.currency || config.currency
+                }
+                walletCountry={config.stripe?.merchantCountry || 'US'}
+                walletLabel={listingTitle || config.marketplaceName}
+                walletOnBehalfOf={providerStripeAccountId}
+                onWalletPaymentMethod={walletEvent =>
+                  handleWalletSubmit(walletEvent, process, props, stripe, submitting, setSubmitting)
+                }
               />
             ) : null}
           </section>

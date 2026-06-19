@@ -402,6 +402,7 @@ describe('CheckoutPage', () => {
         confirmPaymentError: null,
         initiateInquiryError: null,
         initiateInquiryInProgress: false,
+        providerStripeAccountId: null,
       };
 
       it('should return the initial state', () => {

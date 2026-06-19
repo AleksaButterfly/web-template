@@ -151,3 +151,16 @@ export const createUserWithIdp = body => {
 export const deleteUserAccount = body => {
   return post('/api/delete-account', body);
 };
+
+// Fetch the seller's Stripe Connect account id for a given listing.
+//
+// Used by the checkout page to initialise the Payment Request Button
+// with the correct `onBehalfOf` value so the Apple Pay / Google Pay
+// wallet sheet attributes the merchant to the seller rather than the
+// platform. The id is not exposed via the public Marketplace API, so
+// this hits the server-side Integration SDK bridge.
+//
+// See `server/api/stripe-account-for-listing.js`.
+export const stripeAccountForListing = body => {
+  return post('/api/stripe-account-for-listing', body);
+};
