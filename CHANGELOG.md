@@ -14,6 +14,27 @@ way to update this template, but currently, we follow a pattern:
 
 ## Upcoming version 2026-XX-XX
 
+- [fix] Fix some texts in EN language
+  [#863](https://github.com/sharetribe/web-template/pull/863)
+- [fix] Fix file storage domain default value
+  [#862](https://github.com/sharetribe/web-template/pull/862)
+- [add] Add currently available translations for DE, ES, FR.
+  [#859](https://github.com/sharetribe/web-template/pull/859)
+
+## [v11.2.0] 2026-06-04
+
+- [add] Attach file to message
+
+  This PR adds capabilities to upload and download digital files to Sharetribe. This feature is
+  enabled for marketplaces by default, and operators can disable the functionality for the entire
+  marketplace in Console Access control.
+
+  As the first use case for file uploads and downloads, we're adding the capability to attach up to
+  10 files to a transaction message. This functionality is enabled per listing type, and it is
+  disabled for existing listing types by default.
+
+  [#830](https://github.com/sharetribe/web-template/pull/830)
+
 - [change] Stripe.js: load conditionally and defer loading.
   [#847](https://github.com/sharetribe/web-template/pull/847)
 - [fix] configHelpers.js: Only validate numberConfig for schemaType long
