@@ -23,6 +23,7 @@ import {
   OrderPanel,
   LayoutSingleColumn,
   SectionText,
+  ShareButton,
 } from '../../components';
 
 // Related components and modules
@@ -270,6 +271,13 @@ export const ListingPageComponent = props => {
                   <FormattedMessage id="ListingPage.orderTitle" values={{ title: richTitle }} />
                 </H3>
               )}
+            </div>
+            <div className={css.shareButtonRow}>
+              <ShareButton
+                url={productURL}
+                title={title}
+                onManageDisableScrolling={onManageDisableScrolling}
+              />
             </div>
             {showDescription && <SectionText text={description} showAsIngress />}
 

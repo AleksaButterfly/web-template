@@ -775,6 +775,14 @@
   }
 }
 
+.shareButtonRow {
+  margin: 0 24px 24px 24px;
+
+  @media (--viewportMedium) {
+    margin: 0 0 24px 0;
+  }
+}
+
 .noListingImageHeading {
   margin: 0 24px 24px 24px;
   padding-top: 36px;
