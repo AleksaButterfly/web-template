@@ -147,7 +147,6 @@ const ShareButton = props => {
         onClose={() => setIsModalOpen(false)}
         onManageDisableScrolling={onManageDisableScrolling}
         usePortal
-        containerClassName={css.modalContainer}
       >
         <div className={css.modalContent}>
           <h2 className={css.modalTitle}>

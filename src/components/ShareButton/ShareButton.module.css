@@ -23,22 +23,12 @@
   white-space: nowrap;
 }
 
-/* Modal */
-.modalContainer {
-  composes: marketplaceModalInMobileBaseStyles from global;
-  padding: 0;
-}
-
+/* Modal — the Modal component's default container provides the card styling
+   (background, padding, border-radius, width); this only lays out the content. */
 .modalContent {
   display: flex;
   flex-direction: column;
   gap: 20px;
-
-  padding: 24px 24px 32px;
-
-  @media (--viewportMedium) {
-    padding: 32px;
-  }
 }
 
 .modalTitle {
