@@ -14,12 +14,55 @@ way to update this template, but currently, we follow a pattern:
 
 ## Upcoming version 2026-XX-XX
 
-- [fix] Fix some texts in EN language
-  [#863](https://github.com/sharetribe/web-template/pull/863)
+- [fix] Fix negotiation email templates
+  [#878](https://github.com/sharetribe/web-template/pull/878)
+- [fix] Fix typo in a default-download email template
+  [#877](https://github.com/sharetribe/web-template/pull/877)
+
+## [v12.0.0] 2026-07-14
+
+This major release prepares the template for the default-download process. This process is used to
+purchase digital files. The gist is that provider can attach files to a listing and those are
+visible to the customer after the purchase.
+
+- [add] Add support of purchasing digital files (prepare template for default-download process).
+  [#845](https://github.com/sharetribe/web-template/pull/845)
+- [fix] CreateUserWithIdp: harden data handling of st-authinfo cookie.
+  [#874](https://github.com/sharetribe/web-template/pull/874)
+- [change] Update several dependencies. [#875](https://github.com/sharetribe/web-template/pull/875)
+- [fix] login-as feature: harden error handling.
+  [#873](https://github.com/sharetribe/web-template/pull/873)
+- [change] CustomLinksMenu: refactor rendering order to improve hydration behavior.
+  [#872](https://github.com/sharetribe/web-template/pull/872)
+- [change] Update Stripe Connect account requirements for Netherlands. Individual accounts are
+  supported now for users without access to the Stripe dashboard.
+  [#871](https://github.com/sharetribe/web-template/pull/871)
+
+  [v12.0.0]: https://github.com/sharetribe/web-template/compare/v11.2.2...v12.0.0
+
+## [v11.2.2] 2026-06-26
+
+- [fix] Fix open redirect vulnerabilities that could be abused for phishing attacks.
+  [#869](https://github.com/sharetribe/web-template/pull/869)
+
+  [v11.2.2]: https://github.com/sharetribe/web-template/compare/v11.2.1...v11.2.2
+
+## [v11.2.1] 2026-06-25
+
+- [add] Add currently available translations for ES.
+  [#866](https://github.com/sharetribe/web-template/pull/866)
+- [add] Add currently available translations for FR.
+  [#865](https://github.com/sharetribe/web-template/pull/865)
+- [fix] Fix a text in EN language [#864](https://github.com/sharetribe/web-template/pull/864)
+- [fix] Fix some texts in EN language [#863](https://github.com/sharetribe/web-template/pull/863)
 - [fix] Fix file storage domain default value
   [#862](https://github.com/sharetribe/web-template/pull/862)
+- [fix] Fix scrollToMessage and streamline file download behavior
+  [#861](https://github.com/sharetribe/web-template/pull/861)
 - [add] Add currently available translations for DE, ES, FR.
   [#859](https://github.com/sharetribe/web-template/pull/859)
+
+  [v11.2.1]: https://github.com/sharetribe/web-template/compare/v11.2.0...v11.2.1
 
 ## [v11.2.0] 2026-06-04
 
