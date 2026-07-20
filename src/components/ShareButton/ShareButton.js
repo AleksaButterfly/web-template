@@ -197,7 +197,7 @@ const ShareButton = props => {
                   aria-label={label}
                 >
                   <span className={css.targetIcon}>
-                    {renderIcon ? renderIcon({ ariaLabel: '', className: css.icon }) : null}
+                    {renderIcon ? renderIcon({ ariaLabel: '', className: css.targetGlyph }) : null}
                   </span>
                   <span className={css.targetName}>{networkName}</span>
                 </button>

@@ -76,17 +76,22 @@
   color: var(--colorGrey700);
 }
 
-/* Circular chip that sizes and frames the icon */
+/* Circular chip that frames the icon */
 .targetIcon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 14px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--colorGrey50, var(--colorGrey100));
   transition: var(--transitionStyleButton);
+}
+
+.targetGlyph {
+  display: block;
+  width: 18px;
+  height: 18px;
 }
 
 .targetButton:hover .targetIcon {
