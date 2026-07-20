@@ -2,13 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { useIntl, FormattedMessage } from 'react-intl';
 
-import { Modal } from '../../components';
-import {
-  facebookIcon,
-  linkedinIcon,
-  pinterestIcon,
-  xIcon,
-} from '../../containers/PageBuilder/Primitives/Link/Icons';
+import { H2, Modal, SecondaryButton, SecondaryButtonInline } from '../../components';
 import {
   SHARE_TARGETS,
   canNativeShare,
@@ -17,15 +11,25 @@ import {
   openShareTarget,
 } from '../../util/share';
 
-import { checkIcon, emailIcon, linkIcon, shareIcon, whatsappIcon } from './icons';
+import {
+  checkIcon,
+  emailIcon,
+  facebookIcon,
+  linkIcon,
+  linkedinIcon,
+  pinterestIcon,
+  shareIcon,
+  whatsappIcon,
+  xIcon,
+} from './icons';
 import css from './ShareButton.module.css';
 
 const DEFAULT_TARGETS = ['whatsapp', 'x', 'facebook', 'email'];
 const DEFAULT_MODAL_ID = 'ShareButton.shareModal';
 const COPIED_RESET_MS = 2000;
 
-// Maps a SHARE_TARGETS id to its icon renderer. Social icons are reused from the template's
-// PageBuilder set; the rest are local (see ./icons).
+// Maps a SHARE_TARGETS id to its icon renderer (see ./icons). Every icon takes `{ ariaLabel,
+// className }` and renders a width/height-less <svg>, so the wrapper's CSS controls the size.
 const TARGET_ICONS = {
   whatsapp: whatsappIcon,
   x: xIcon,
@@ -50,9 +54,9 @@ const TARGET_NAMES = {
  * external share channels (WhatsApp, X, Facebook, Email, …). On devices that support the native Web
  * Share API, the modal also offers the OS share sheet.
  *
- * The component is presentation-only: pass in a ready-to-share (preferably canonical, absolute)
- * `url` and it handles the rest. It reuses the template's `Modal`, so the host page must provide
- * `onManageDisableScrolling` (dispatched from the `manageDisableScrolling` UI duck action).
+ * Built from the template's own components — `SecondaryButtonInline` (trigger), `H2`, `Modal`, and
+ * `SecondaryButton` (copy / native share) — so it matches the rest of the UI. The host page must
+ * provide `onManageDisableScrolling` (dispatched from the `manageDisableScrolling` UI duck action).
  *
  * @component
  * @param {Object} props
@@ -63,7 +67,7 @@ const TARGET_NAMES = {
  * @param {Array<string>} [props.targets] - Ordered SHARE_TARGETS ids to show. Defaults to WhatsApp, X, Facebook, Email.
  * @param {Function} props.onManageDisableScrolling - Forwarded to Modal; `(id, disableScrolling) => void`.
  * @param {string} [props.modalId] - Unique Modal id; set this when multiple ShareButtons share a page.
- * @param {string} [props.rootClassName] - Overrides the root/trigger CSS class.
+ * @param {string} [props.rootClassName] - Overrides the trigger's root class (SecondaryButtonInline root).
  * @param {string} [props.className] - Additional classes appended to the trigger.
  * @returns {JSX.Element|null}
  */
@@ -125,21 +129,17 @@ const ShareButton = props => {
     nativeShare(nativeShareData).catch(() => {});
   };
 
-  const classes = classNames(rootClassName || css.root, className);
-
   return (
     <>
-      <button
+      <SecondaryButtonInline
         type="button"
-        className={classes}
+        rootClassName={rootClassName}
+        className={classNames(css.trigger, className)}
         onClick={() => setIsModalOpen(true)}
-        aria-label={intl.formatMessage({ id: 'ShareButton.label' })}
       >
-        {shareIcon({ ariaLabel: '' })}
-        <span className={css.triggerLabel}>
-          <FormattedMessage id="ShareButton.label" />
-        </span>
-      </button>
+        <span className={css.buttonIcon}>{shareIcon({ ariaLabel: '', className: css.icon })}</span>
+        <FormattedMessage id="ShareButton.label" />
+      </SecondaryButtonInline>
 
       <Modal
         id={modalId}
@@ -149,9 +149,9 @@ const ShareButton = props => {
         usePortal
       >
         <div className={css.modalContent}>
-          <h2 className={css.modalTitle}>
+          <H2 className={css.modalTitle}>
             <FormattedMessage id="ShareButton.modalTitle" />
-          </h2>
+          </H2>
 
           <div className={css.copyRow}>
             <input
@@ -162,16 +162,18 @@ const ShareButton = props => {
               aria-label={intl.formatMessage({ id: 'ShareButton.linkLabel' })}
               onFocus={e => e.target.select()}
             />
-            <button type="button" className={css.copyButton} onClick={handleCopy}>
-              {copied ? checkIcon({ ariaLabel: '' }) : linkIcon({ ariaLabel: '' })}
-              <span>
-                {copied ? (
-                  <FormattedMessage id="ShareButton.copied" />
-                ) : (
-                  <FormattedMessage id="ShareButton.copyLink" />
-                )}
+            <SecondaryButton type="button" onClick={handleCopy}>
+              <span className={css.buttonIcon}>
+                {copied
+                  ? checkIcon({ ariaLabel: '', className: css.icon })
+                  : linkIcon({ ariaLabel: '', className: css.icon })}
               </span>
-            </button>
+              {copied ? (
+                <FormattedMessage id="ShareButton.copied" />
+              ) : (
+                <FormattedMessage id="ShareButton.copyLink" />
+              )}
+            </SecondaryButton>
           </div>
 
           <p className={css.shareOnLabel}>
@@ -194,7 +196,9 @@ const ShareButton = props => {
                   title={label}
                   aria-label={label}
                 >
-                  {renderIcon ? renderIcon({ ariaLabel: '' }) : null}
+                  <span className={css.targetIcon}>
+                    {renderIcon ? renderIcon({ ariaLabel: '', className: css.icon }) : null}
+                  </span>
                   <span className={css.targetName}>{networkName}</span>
                 </button>
               );
@@ -202,12 +206,12 @@ const ShareButton = props => {
           </div>
 
           {nativeShareAvailable ? (
-            <button type="button" className={css.nativeShareButton} onClick={handleNativeShare}>
-              {shareIcon({ ariaLabel: '' })}
-              <span>
-                <FormattedMessage id="ShareButton.moreOptions" />
+            <SecondaryButton type="button" onClick={handleNativeShare}>
+              <span className={css.buttonIcon}>
+                {shareIcon({ ariaLabel: '', className: css.icon })}
               </span>
-            </button>
+              <FormattedMessage id="ShareButton.moreOptions" />
+            </SecondaryButton>
           ) : null}
         </div>
       </Modal>
